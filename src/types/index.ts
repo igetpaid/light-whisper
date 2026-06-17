@@ -214,5 +214,6 @@ export interface UserProfile {
   web_search?: WebSearchConfig;
   correction_validation_enabled?: boolean;
   last_correction_validation?: number;
+  start_in_tray?: boolean;
 }
 

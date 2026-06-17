@@ -101,6 +101,9 @@ pub struct UserProfile {
     /// 上次 LLM 审核时间戳（Unix 秒）
     #[serde(default)]
     pub last_correction_validation: u64,
+    /// 启动时最小化到托盘
+    #[serde(default)]
+    pub start_in_tray: bool,
 }
 
 /// 联网搜索方式

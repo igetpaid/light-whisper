@@ -784,6 +784,17 @@ pub async fn remove_correction(
     Ok(())
 }
 
+#[tauri::command]
+pub async fn set_start_in_tray(
+    state: tauri::State<'_, AppState>,
+    enabled: bool,
+) -> Result<(), String> {
+    profile_service::update_profile_and_schedule(state.inner(), |profile| {
+        profile.start_in_tray = enabled;
+    });
+    Ok(())
+}
+
 fn update_validation_timestamp(state: &AppState) {
     profile_service::update_profile_and_schedule(state, |profile| {
         profile.last_correction_validation = std::time::SystemTime::now()

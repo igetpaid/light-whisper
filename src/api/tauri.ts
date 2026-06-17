@@ -368,8 +368,12 @@ export function setCorrectionValidationConfig(params: {
   return invokeCommand<void>("set_correction_validation_config", args);
 }
 
+export function setStartInTray(enabled: boolean): Promise<void> {
+  return invokeCommand<void>("set_start_in_tray", { enabled });
+}
+
 /**
- * 保存在线 ASR 的 API Key。`keyringUser` 由调用方在用户键入瞬间就锁定，
+ * 保存在线 ASR 的 API Key。`keyringUser` 由调用方在用户入瞬间就锁定，
  * 避免 debounce 与 engine/region 切换产生的 race。
  */
 export function setOnlineAsrApiKey(apiKey: string, keyringUser?: string): Promise<void> {

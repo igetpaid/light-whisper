@@ -67,6 +67,7 @@ import {
   setCorrectionValidationConfig,
   removeCorrection,
   hideMainWindow,
+  setStartInTray as setStartInTrayValue,
 } from "@/api/tauri";
 import type { AiModelInfo, CorrectionPattern, CustomProvider, InputDeviceInfo, UserProfile, ApiFormat, LlmReasoningMode, LlmReasoningSupport, OpenaiAuthMode, OpenaiCodexOauthStatus, WebSearchProvider } from "@/types";
 import { useRecordingContext } from "@/contexts/RecordingContext";
@@ -411,6 +412,8 @@ export default function SettingsPage({
   const [engineLoading, setEngineLoading] = useState(true);
   const [autostart, setAutostart] = useState(false);
   const [autostartLoading, setAutostartLoading] = useState(true);
+  const [startInTray, setStartInTray] = useState(false);
+  const [startInTrayLoading, setStartInTrayLoading] = useState(true);
   const [recordingMode, setRecordingModeState] = useState<"hold" | "toggle">(() => {
     return readLocalStorage(RECORDING_MODE_KEY) === "toggle" ? "toggle" : "hold";
   });
@@ -918,6 +921,13 @@ export default function SettingsPage({
     }).catch(() => setAutostartLoading(false));
   }, []);
 
+  useEffect(() => {
+    getUserProfile().then(profile => {
+      setStartInTray(profile.start_in_tray ?? false);
+      setStartInTrayLoading(false);
+    }).catch(() => setStartInTrayLoading(false));
+  }, []);
+
   const refreshInputDevices = useCallback(async () => {
     setDeviceListLoading(true);
     try {
@@ -1037,6 +1047,25 @@ export default function SettingsPage({
       toast.error(t("toast.autostartFailed"));
     } finally {
       setAutostartLoading(false);
+    }
+  };
+
+  const handleStartInTrayToggle = async () => {
+    if (startInTrayLoading) return;
+    const prev = startInTray;
+    setStartInTray(!prev);
+    setStartInTrayLoading(true);
+    try {
+      await setStartInTrayValue(!prev);
+      toast.success(
+        !prev ? t("toast.startInTrayEnabled") : t("toast.startInTrayDisabled"),
+        { duration: 1100 },
+      );
+    } catch {
+      setStartInTray(prev);
+      toast.error(t("toast.startInTrayFailed"));
+    } finally {
+      setStartInTrayLoading(false);
     }
   };
 
@@ -3959,6 +3988,21 @@ export default function SettingsPage({
                 }}
               >
                 <div className="toggle-knob" style={{ transform: autostart ? "translateX(20px)" : "translateX(0)" }} />
+              </button>
+            </div>
+            <div className="settings-row">
+              <span className="permission-label">{t("settings.startInTray")}</span>
+              <button
+                role="switch"
+                aria-checked={startInTray}
+                aria-label={t("settings.startInTray")}
+                onClick={handleStartInTrayToggle}
+                className="toggle-switch"
+                style={{
+                  background: startInTray ? "var(--color-accent)" : "var(--color-bg-tertiary)",
+                }}
+              >
+                <div className="toggle-knob" style={{ transform: startInTray ? "translateX(20px)" : "translateX(0)" }} />
               </button>
             </div>
           </section>

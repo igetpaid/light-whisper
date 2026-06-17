@@ -39,26 +39,24 @@ pub fn run() {
                 return Ok(());
             }
 
-            // Скрытие окна при запуске с --minimized (для автозагрузки)
-            let args: Vec<String> = std::env::args().collect();
-            if args.iter().any(|a| a == "--minimized") {
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.hide();
-                }
-            }
-
             let app_handle = app.handle().clone();
             log::info!(
                 "轻语 Whisper 应用启动，数据目录: {:?}",
                 utils::paths::get_data_dir()
             );
 
-            // 启动时加载用户画像
+            // Сначала загружаем профиль, чтобы прочитать start_in_tray
+            let loaded_profile = services::profile_service::load_profile();
+            let start_minimized = {
+                let args: Vec<String> = std::env::args().collect();
+                let cli_flag = args.iter().any(|a| a == "--minimized");
+                cli_flag || loaded_profile.start_in_tray
+            };
+
+            // Мигрируем旧版 custom API key
             {
                 let state = app_handle.state::<AppState>();
-                let loaded = services::profile_service::load_profile();
-                // 迁移旧版 custom API key 到新 keyring key（仅在目标 key 不存在时执行）
-                if loaded.llm_provider.active == "custom_migrated" {
+                if loaded_profile.llm_provider.active == "custom_migrated" {
                     use tauri_plugin_keyring::KeyringExt;
                     let new_user =
                         services::llm_provider::keyring_user_for_provider("custom_migrated");
@@ -84,8 +82,17 @@ pub fn run() {
                         }
                     }
                 }
-                state.update_profile_mut(|profile| *profile = loaded);
+                state.update_profile_mut(|profile| *profile = loaded_profile);
                 log::info!("已加载用户画像");
+            }
+
+            // Окно создано невидимым (visible: false в конфиге).
+            // Показываем только если НЕТ флага --minimized И start_in_tray = false.
+            if !start_minimized {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
             }
 
             // 注册翻译/助手热键
@@ -238,6 +245,7 @@ pub fn run() {
             commands::profile::validate_corrections,
             commands::profile::set_correction_validation_config,
             commands::profile::remove_correction,
+            commands::profile::set_start_in_tray,
             commands::updater::check_app_update,
             commands::updater::open_app_release_page,
             commands::assistant::set_assistant_hotkey,
