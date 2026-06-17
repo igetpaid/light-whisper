@@ -39,6 +39,14 @@ pub fn run() {
                 return Ok(());
             }
 
+            // Скрытие окна при запуске с --minimized (для автозагрузки)
+            let args: Vec<String> = std::env::args().collect();
+            if args.iter().any(|a| a == "--minimized") {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.hide();
+                }
+            }
+
             let app_handle = app.handle().clone();
             log::info!(
                 "轻语 Whisper 应用启动，数据目录: {:?}",
